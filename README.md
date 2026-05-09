@@ -1,14 +1,21 @@
 # Campus Companion
 
-A full-stack academic management system for students, teachers, and admins, built with React, Vite, Express, MongoDB, Socket.IO, JWT, and Firebase Authentication.
+A fully serverless, full-stack academic management system for students, teachers, and admins, built with React, Vite, Tailwind CSS, and powered by Firebase (Authentication, Firestore, Storage).
 
 ## Project Structure
 
+This is a modern Single Page Application (SPA) with no dedicated backend server. All database interactions and role-based security are handled securely via the Firebase SDK and Firestore Security Rules.
+
 ```text
 campus/
-  frontend/      Vite + React client
-  backend/       Express API, MongoDB models, Socket.IO server
-  vercel.json    Vercel config for deploying the frontend from repo root
+  src/
+    components/      # Reusable UI components
+    context/         # AuthContext for session management
+    pages/           # Dashboards, Login, Profile
+    services/        # firebase.js & firestoreService.js (replaces old APIs)
+  .env               # Firebase configuration keys
+  firestore.rules    # Database security rules
+  vercel.json        # Vercel deployment configuration
 ```
 
 ## Local Setup
@@ -16,86 +23,77 @@ campus/
 Install dependencies:
 
 ```bash
-npm run install-all
+npm install
 ```
 
-Create environment files from the examples:
+Set up your environment variables by creating a `.env` file in the root directory based on `.env.example`:
 
 ```bash
-cp frontend/.env.example frontend/.env
-cp backend/.env.example backend/.env
+cp .env.example .env
 ```
 
-Start both apps:
+Start the Vite development server:
 
 ```bash
 npm run dev
 ```
 
-Local URLs:
+Local URL: `http://localhost:5173`
 
-- Frontend: `http://localhost:5173`
-- Backend: `http://localhost:5000`
+## Firebase Setup
 
-## Firebase Auth
+This application relies entirely on Firebase. You must configure a Firebase project:
 
-In Firebase Console, enable:
+1. **Authentication**: Enable Email/Password and Google Sign-in providers.
+2. **Firestore Database**: Create a database and apply the rules found in `firestore.rules`.
+3. **Storage**: Enable Firebase Storage for user avatars.
 
-- Email/Password provider
-- Google provider
-
-For the backend Firebase Admin SDK, add either `FIREBASE_SERVICE_ACCOUNT` or `FIREBASE_CLIENT_EMAIL` plus `FIREBASE_PRIVATE_KEY` to `backend/.env`.
-
-## Vercel Deployment
-
-This repo is configured to deploy the frontend and Express API together on Vercel from the repository root.
-
-Vercel settings can stay simple:
+Update the `.env` file with your project's configuration:
 
 ```text
-Framework Preset: Other
-Install Command: npm install
-Build Command: npm run build
-Output Directory: frontend/dist
-```
-
-The included `vercel.json` already sets those values and routes `/api/*` requests to the Express app.
-
-Set these Vercel environment variables:
-
-```text
-MONGO_URI=your_mongodb_connection_string
-JWT_SECRET=your_jwt_secret
-FIREBASE_PROJECT_ID=campus-c7907
-FIREBASE_SERVICE_ACCOUNT=your_firebase_service_account_json
-VITE_FIREBASE_API_KEY=your_firebase_web_api_key
-VITE_FIREBASE_AUTH_DOMAIN=your-project.firebaseapp.com
-VITE_FIREBASE_PROJECT_ID=your-project-id
-VITE_FIREBASE_STORAGE_BUCKET=your-project.firebasestorage.app
-VITE_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
-VITE_FIREBASE_APP_ID=your_web_app_id
+VITE_FIREBASE_API_KEY=your_api_key
+VITE_FIREBASE_AUTH_DOMAIN=your_auth_domain
+VITE_FIREBASE_PROJECT_ID=your_project_id
+VITE_FIREBASE_STORAGE_BUCKET=your_storage_bucket
+VITE_FIREBASE_MESSAGING_SENDER_ID=your_messaging_sender_id
+VITE_FIREBASE_APP_ID=your_app_id
 VITE_FIREBASE_MEASUREMENT_ID=your_measurement_id
 ```
 
-Leave `VITE_API_URL` blank on Vercel when the API is deployed in this same project. The frontend will call the same-origin `/api` routes automatically.
+## Security Rules
 
-Note: Vercel serverless functions do not run a persistent Socket.IO server. The app disables realtime sockets on Vercel unless `VITE_SOCKET_URL` is set, so normal API features work but live dashboard refreshes are not persistent there.
+Because this application does not use a traditional backend API, database security is enforced directly at the database level. 
 
-## Useful Scripts
+To deploy the security rules that prevent students from editing grades and restrict teachers to their own courses, run:
 
 ```bash
-npm run install-all
-npm run dev
-cd frontend && npm run build
-cd backend && npm start
+firebase deploy --only firestore:rules
 ```
+Or manually copy the contents of `firestore.rules` into the Firebase Console -> Firestore -> Rules tab.
 
-## Test Accounts
+## Vercel Deployment
 
-After seeding the database:
+This repository is optimized for Vercel deployment. Because there is no backend, deployment is incredibly fast and simple.
+
+Vercel settings:
+- **Framework Preset**: Vite
+- **Build Command**: `npm run build`
+- **Output Directory**: `dist`
+
+Ensure all `VITE_FIREBASE_*` environment variables are added to your Vercel project settings.
+
+## Getting Started / Test Accounts
+
+Since there is no backend seeding script, you can initialize your platform manually. We recommend creating the following accounts:
 
 | Role | Email | Password |
 | --- | --- | --- |
 | Admin | admin@campus.com | password123 |
-| Teacher | alice@teacher.com | password123 |
-| Student | student1@campus.com | password123 |
+| Teacher | teacher@campus.com | password123 |
+| Student | student@campus.com | password123 |
+
+**To create these accounts:**
+1. Register a new account normally (it will default to `student`).
+2. Go to your Firebase Console -> Firestore Database -> `users` collection.
+3. Find your user document and manually change the `role` field to `"admin"` or `"teacher"`.
+4. Log back in to access the corresponding Dashboard, where admins can create other teachers, courses, and users!

@@ -1,0 +1,156 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // ─── HELPER FUNCTIONS ────────────────────────────────────────────────────────
+    
+    // Check if the user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    // Fetch the user's role from the users collection
+    function getUserRole() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
+    }
+    
+    // Check if the user is an admin
+    function isAdmin() {
+      return isAuthenticated() && getUserRole() == 'admin';
+    }
+    
+    // Check if the user is a teacher
+    function isTeacher() {
+      return isAuthenticated() && getUserRole() == 'teacher';
+    }
+    
+    // Check if the user is a student
+    function isStudent() {
+      return isAuthenticated() && getUserRole() == 'student';
+    }
+
+    // Check if the user is the teacher of a specific course
+    function isTeacherOfCourse(courseId) {
+      let course = get(/databases/$(database)/documents/courses/$(courseId));
+      return course != null && course.data.teacherId == request.auth.uid;
+    }
+
+
+    // ─── COLLECTION RULES ────────────────────────────────────────────────────────
+
+    // 1. USERS COLLECTION
+    match /users/{userId} {
+      // Anyone logged in can read basic user info (needed for populating tables)
+      allow read: if isAuthenticated();
+      
+      // Users can update their own profile (avatar, name). 
+      // Role changes must be done by admins.
+      allow update: if isAuthenticated() && (request.auth.uid == userId || isAdmin()) 
+                    && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['role']) || isAdmin());
+      
+      // Only admins can create or delete users
+      allow create, delete: if isAdmin() || request.auth.uid == userId; 
+    }
+
+    // 2. COURSES COLLECTION
+    match /courses/{courseId} {
+      // Any authenticated user can view the course catalog
+      allow read: if isAuthenticated();
+      
+      // Only admins can create, update, or delete courses
+      allow write: if isAdmin();
+    }
+
+    // 3. GRADES COLLECTION
+    match /grades/{gradeId} {
+      // Students can only see their own grades.
+      // Teachers can see grades for courses they teach.
+      // Admins can see everything.
+      allow read: if isAuthenticated() && (
+        resource.data.studentId == request.auth.uid || 
+        isTeacherOfCourse(resource.data.courseId) || 
+        isAdmin()
+      );
+      
+      // Students CANNOT write grades.
+      // Teachers can only write grades for courses they teach.
+      allow create, update: if isAuthenticated() && (
+        isAdmin() || 
+        (isTeacher() && isTeacherOfCourse(request.resource.data.courseId))
+      );
+      
+      // Only admins and the teacher who assigned the grade can delete it
+      allow delete: if isAuthenticated() && (
+        isAdmin() || 
+        (isTeacher() && isTeacherOfCourse(resource.data.courseId))
+      );
+    }
+
+    // 4. ATTENDANCE COLLECTION
+    match /attendance/{attendanceId} {
+      // Students see their own attendance.
+      // Teachers see attendance for their courses.
+      // Admins see all.
+      allow read: if isAuthenticated() && (
+        resource.data.studentId == request.auth.uid || 
+        isTeacherOfCourse(resource.data.courseId) || 
+        isAdmin()
+      );
+
+      // Teachers mark attendance for their courses.
+      allow create, update: if isAuthenticated() && (
+        isAdmin() || 
+        (isTeacher() && isTeacherOfCourse(request.resource.data.courseId))
+      );
+      
+      allow delete: if isAdmin();
+    }
+
+    // 5. ASSIGNMENTS COLLECTION
+    match /assignments/{assignmentId} {
+      // Any authenticated user can view assignments
+      allow read: if isAuthenticated();
+
+      // Teachers can create/edit assignments for their assigned courses
+      allow create, update, delete: if isAuthenticated() && (
+        isAdmin() || 
+        (isTeacher() && isTeacherOfCourse(request.resource.data.courseId)) ||
+        (isTeacher() && isTeacherOfCourse(resource.data.courseId)) // For updates/deletes
+      );
+    }
+
+    // 6. SUBMISSIONS COLLECTION
+    match /submissions/{submissionId} {
+      // Students see their own submissions.
+      // Teachers see submissions for their courses.
+      allow read: if isAuthenticated() && (
+        resource.data.studentId == request.auth.uid || 
+        isAdmin() ||
+        (isTeacher() && isTeacherOfCourse(get(/databases/$(database)/documents/assignments/$(resource.data.assignmentId)).data.courseId))
+      );
+
+      // Students can create submissions
+      allow create: if isStudent() && request.resource.data.studentId == request.auth.uid;
+      
+      // Students can update their own submissions
+      allow update: if isStudent() && resource.data.studentId == request.auth.uid;
+      
+      allow delete: if isAdmin();
+    }
+    
+    // 7. ANNOUNCEMENTS COLLECTION
+    match /announcements/{announcementId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    // 8. ACTIVITY FEED COLLECTION
+    match /activityFeed/{activityId} {
+      // Activity feed is generally readable
+      allow read: if isAuthenticated();
+      // Allow the frontend to write to the activity feed when actions happen
+      allow write: if isAuthenticated(); 
+    }
+  }
+}
