@@ -1,0 +1,151 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+@import "tailwindcss";
+
+@layer base {
+  html,
+  body {
+    height: 100%;
+    font-family: 'Inter', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    color: var(--text-main);
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  :root {
+    --bg-main: #f8fafc; /* slate-50 */
+    --surface: #ffffff;
+    --primary: #2563eb; /* blue-600 */
+    --primary-hover: #1d4ed8; /* blue-700 */
+    --secondary: #64748b; /* slate-500 */
+    --border: #e2e8f0; /* slate-200 */
+    --text-main: #0f172a; /* slate-900 */
+    --text-muted: #475569; /* slate-600 */
+    --radius: 0.75rem;
+    
+    /* Selection colors */
+    --selection-bg: #dbeafe; /* blue-100 */
+    --selection-text: #1e40af; /* blue-800 */
+  }
+
+  .dark {
+    --bg-main: #020617; /* slate-950 */
+    --surface: #0f172a; /* slate-900 */
+    --primary: #3b82f6; /* blue-500 */
+    --primary-hover: #60a5fa; /* blue-400 */
+    --secondary: #94a3b8; /* slate-400 */
+    --border: #1e293b; /* slate-800 */
+    --text-main: #f8fafc; /* slate-50 */
+    --text-muted: #94a3b8; /* slate-400 */
+    
+    --selection-bg: #1e40af; /* blue-800 */
+    --selection-text: #eff6ff; /* blue-50 */
+  }
+
+  body {
+    min-height: 100vh;
+    margin: 0;
+    padding: 0;
+    background-color: var(--bg-main);
+    color: var(--text-main);
+    transition: background-color 0.2s ease, color 0.2s ease;
+  }
+
+  /* Standard Headings */
+  h1, h2, h3, h4, h5, h6 {
+    font-weight: 700;
+    color: var(--text-main);
+    margin: 0;
+    background: none !important;
+    -webkit-text-fill-color: initial !important;
+  }
+
+  h1 { font-size: 1.875rem; line-height: 2.25rem; margin-bottom: 1.5rem; }
+  h2 { font-size: 1.5rem; line-height: 2rem; margin-bottom: 1rem; }
+  h3 { font-size: 1.25rem; line-height: 1.75rem; margin-bottom: 0.75rem; }
+
+  /* Standard Buttons */
+  button:not([class*="btn-"]) {
+    padding: 0.5rem 1rem;
+    border-radius: var(--radius);
+    font-weight: 500;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .btn-primary {
+    background-color: var(--primary);
+    color: white;
+    border: none;
+    transition: all 0.2s ease;
+  }
+  
+  .btn-primary:hover { opacity: 0.9; }
+  .btn-primary:active { transform: scale(0.95); }
+  .btn-primary:disabled { opacity: 0.5; transform: scale(1); }
+
+  .btn-secondary {
+    background-color: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-main);
+  }
+  
+  .btn-secondary:hover { background-color: rgba(100, 116, 139, 0.1); }
+
+  /* Form Elements */
+  input, select, textarea {
+    width: 100%;
+    padding: 0.5rem 1rem;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    background-color: var(--surface);
+    color: var(--text-main);
+    outline: none;
+    transition: all 0.2s ease;
+  }
+  
+  input:focus, select:focus, textarea:focus {
+    box-shadow: 0 0 0 2px var(--primary);
+    border-color: var(--primary);
+  }
+
+  label {
+    display: block;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    margin-bottom: 0.25rem;
+  }
+
+  /* Card Styles */
+  .card {
+    background-color: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    overflow: hidden;
+  }
+
+  ::selection {
+    background-color: var(--selection-bg);
+    color: var(--selection-text);
+  }
+}
+
+@layer utilities {
+  .glass {
+    background-color: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+  }
+  
+  .dark .glass {
+    background-color: rgba(15, 23, 42, 0.8);
+    border: 1px solid rgba(30, 41, 59, 0.2);
+  }
+}
+
+
